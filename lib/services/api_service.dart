@@ -1,15 +1,22 @@
+import 'dart:convert';
+
+import 'package:flutter_toonflix/models/webtoon_model.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
   final String baseUrl = "https://webtoon-crawler.nomadcoders.workers.dev";
   final String today = "today";
 
-  void getTodayToons() async {
+  Future<List<WebtoonModel>> getTodayToons() async {
+    List<WebtoonModel> result = [];
     final url = Uri.parse("$baseUrl/$today");
     final response = await http.get(url);
     if (response.statusCode == 200) {
-      print(response.body);
-      return;
+      final toons = jsonDecode(response.body);
+      for (var toon in toons) {
+        result.add(WebtoonModel.fromJson(toon));
+      }
+      return result;
     }
     throw Error();
   }
