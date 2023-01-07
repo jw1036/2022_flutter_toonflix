@@ -3,6 +3,7 @@ import 'package:flutter_toonflix/models/webtoon_detail_model.dart';
 import 'package:flutter_toonflix/models/webtoon_epsode_model.dart';
 import 'package:flutter_toonflix/services/api_service.dart';
 import 'package:flutter_toonflix/widgets/episode_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DetailScreen extends StatefulWidget {
   final String title;
@@ -23,6 +24,8 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen> {
   late Future<WebtoonDetailModel> webtoonDetail;
   late Future<List<WebtoonEpisodeModel>> webtoonEpsodes;
+  late SharedPreferences prefs;
+  bool isFavorite = false;
 
   @override
   void initState() {
@@ -30,12 +33,53 @@ class _DetailScreenState extends State<DetailScreen> {
 
     webtoonDetail = ApiService.getToonDetail(widget.id);
     webtoonEpsodes = ApiService.getToonEpisodes(widget.id);
+
+    initPrefs();
+  }
+
+  void initPrefs() async {
+    prefs = await SharedPreferences.getInstance();
+
+    final favoriteToons = prefs.getStringList('favoriteToons');
+    if (favoriteToons != null) {
+      if (favoriteToons.contains(widget.id)) {
+        setState(() {
+          isFavorite = true;
+        });
+      }
+    } else {
+      await prefs.setStringList('favoriteToons', []);
+    }
+  }
+
+  void onFavoriteTap() async {
+    final favoriteToons = prefs.getStringList('favoriteToons');
+    if (favoriteToons != null) {
+      if (isFavorite) {
+        favoriteToons.remove(widget.id);
+      } else {
+        favoriteToons.add(widget.id);
+      }
+      await prefs.setStringList('favoriteToons', favoriteToons);
+      setState(() {
+        isFavorite = !isFavorite;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+          actions: <Widget>[
+            IconButton(
+              onPressed: onFavoriteTap,
+              icon: Icon(
+                isFavorite ? Icons.favorite : Icons.favorite_border,
+                size: 30,
+              ),
+            ),
+          ],
           elevation: 2,
           backgroundColor: Colors.white,
           foregroundColor: Colors.green,
